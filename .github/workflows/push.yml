@@ -67,6 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        moodle-branch: ['MOODLE_502_STABLE']
         include:
           # MySQL builds always run with the lowest PHP supported version.
           - os: ubuntu-24.04
@@ -106,9 +107,28 @@ jobs:
           coverage: none
 
       - name: Checking out code from ${{ env.GITHUB_REF_SLUG }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          path: plugin
+          persist-credentials: false
+
+      - name: Checking out Moodle ${{ matrix.moodle-branch }}
+        uses: actions/checkout@v6
+        with:
+          repository: moodle/moodle
+          ref: ${{ matrix.moodle-branch }}
+          path: moodle
+
+      - name: Installing plugins
+        run: |
+          rsync -av \
+            --exclude='.*' \
+            --exclude='*.sh' \
+            --exclude='composer.json' \
+            plugin/ moodle/public/
 
       - name: Setting up PHPUnit
+        working-directory: moodle
         env:
           dbtype: ${{ matrix.db }}
         run: |
@@ -119,10 +139,12 @@ jobs:
           php public/admin/tool/phpunit/cli/init.php --no-composer-self-update
 
       - name: Running PHPUnit tests
+        working-directory: moodle
         env:
           dbtype: ${{ matrix.db }}
           phpunit_options: ${{ secrets.phpunit_options }}
         run: vendor/bin/phpunit $phpunit_options ${{ inputs.phpunit_extra_options }}
 
       - name: Git status
+        working-directory: plugin
         run: git status
