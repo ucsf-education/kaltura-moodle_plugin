@@ -19,3 +19,4 @@
 
 # Additional files we maintain
 !.github/workflows/moodle-ci.yml
+!.github/workflows/push.yml
