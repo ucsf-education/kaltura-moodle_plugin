@@ -120,6 +120,18 @@ jobs:
           ref: ${{ matrix.moodle-branch }}
           path: moodle
 
+      - name: Applying MDL-87086 patch
+        working-directory: moodle
+        run: |
+          git remote add ctam https://github.com/ctam/moodle.git
+          git fetch ctam MDL-87086-${{ matrix.moodle-branch }}
+          ## git merge does not always work, with merge unrelated history error.
+          # git merge --no-edit FETCH_HEAD
+          ## So, we use cherry-pick instead.
+          git config user.name "GitHub Actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git cherry-pick 6535f1e1e610bdee7b319f7203e47f17f051fec1
+
       - name: Installing plugins
         run: |
           rsync -av \
